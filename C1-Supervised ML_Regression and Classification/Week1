@@ -1,0 +1,642 @@
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "colab": {
+      "provenance": [],
+      "authorship_tag": "ABX9TyMGdtB3OtE3ZIhhPZCnSOvz",
+      "include_colab_link": true
+    },
+    "kernelspec": {
+      "name": "python3",
+      "display_name": "Python 3"
+    },
+    "language_info": {
+      "name": "python"
+    }
+  },
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "view-in-github",
+        "colab_type": "text"
+      },
+      "source": [
+        "<a href=\"https://colab.research.google.com/github/yMugrelo/ML/blob/main/C1-Supervised%20ML_Regression%20and%20Classification/Week1\" target=\"_parent\"><img src=\"https://colab.research.google.com/assets/colab-badge.svg\" alt=\"Open In Colab\"/></a>"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 35,
+      "metadata": {
+        "id": "nggvSQ_yyGPd"
+      },
+      "outputs": [],
+      "source": [
+        "import math,copy\n",
+        "import matplotlib.pyplot as plt\n",
+        "import numpy as np\n",
+        "\n",
+        "\"\"\"\n",
+        "lab_utils_common.py\n",
+        "    functions common to all optional labs, Course 1, Week 2\n",
+        "\"\"\"\n",
+        "\n",
+        "import numpy as np\n",
+        "import matplotlib.pyplot as plt\n",
+        "\n",
+        "\n",
+        "\n",
+        "\n",
+        "##########################################################\n",
+        "# Regression Routines\n",
+        "##########################################################\n",
+        "\n",
+        "#Function to calculate the cost\n",
+        "def compute_cost_matrix(X, y, w, b, verbose=False):\n",
+        "    \"\"\"\n",
+        "    Computes the gradient for linear regression\n",
+        "     Args:\n",
+        "      X (ndarray (m,n)): Data, m examples with n features\n",
+        "      y (ndarray (m,)) : target values\n",
+        "      w (ndarray (n,)) : model parameters\n",
+        "      b (scalar)       : model parameter\n",
+        "      verbose : (Boolean) If true, print out intermediate value f_wb\n",
+        "    Returns\n",
+        "      cost: (scalar)\n",
+        "    \"\"\"\n",
+        "    m = X.shape[0]\n",
+        "\n",
+        "    # calculate f_wb for all examples.\n",
+        "    f_wb = X @ w + b\n",
+        "    # calculate cost\n",
+        "    total_cost = (1/(2*m)) * np.sum((f_wb-y)**2)\n",
+        "\n",
+        "    if verbose: print(\"f_wb:\")\n",
+        "    if verbose: print(f_wb)\n",
+        "\n",
+        "    return total_cost\n",
+        "\n",
+        "def compute_gradient_matrix(X, y, w, b):\n",
+        "    \"\"\"\n",
+        "    Computes the gradient for linear regression\n",
+        "\n",
+        "    Args:\n",
+        "      X (ndarray (m,n)): Data, m examples with n features\n",
+        "      y (ndarray (m,)) : target values\n",
+        "      w (ndarray (n,)) : model parameters\n",
+        "      b (scalar)       : model parameter\n",
+        "    Returns\n",
+        "      dj_dw (ndarray (n,1)): The gradient of the cost w.r.t. the parameters w.\n",
+        "      dj_db (scalar):        The gradient of the cost w.r.t. the parameter b.\n",
+        "\n",
+        "    \"\"\"\n",
+        "    m,n = X.shape\n",
+        "    f_wb = X @ w + b\n",
+        "    e   = f_wb - y\n",
+        "    dj_dw  = (1/m) * (X.T @ e)\n",
+        "    dj_db  = (1/m) * np.sum(e)\n",
+        "\n",
+        "    return dj_db,dj_dw\n",
+        "\n",
+        "\n",
+        "# Loop version of multi-variable compute_cost\n",
+        "def compute_cost(X, y, w, b):\n",
+        "    \"\"\"\n",
+        "    compute cost\n",
+        "    Args:\n",
+        "      X (ndarray (m,n)): Data, m examples with n features\n",
+        "      y (ndarray (m,)) : target values\n",
+        "      w (ndarray (n,)) : model parameters\n",
+        "      b (scalar)       : model parameter\n",
+        "    Returns\n",
+        "      cost (scalar)    : cost\n",
+        "    \"\"\"\n",
+        "    m = X.shape[0]\n",
+        "    cost = 0.0\n",
+        "    for i in range(m):\n",
+        "        f_wb_i = np.dot(X[i],w) + b           #(n,)(n,)=scalar\n",
+        "        cost = cost + (f_wb_i - y[i])**2\n",
+        "    cost = cost/(2*m)\n",
+        "    return cost\n",
+        "\n",
+        "def compute_gradient(X, y, w, b):\n",
+        "    \"\"\"\n",
+        "    Computes the gradient for linear regression\n",
+        "    Args:\n",
+        "      X (ndarray (m,n)): Data, m examples with n features\n",
+        "      y (ndarray (m,)) : target values\n",
+        "      w (ndarray (n,)) : model parameters\n",
+        "      b (scalar)       : model parameter\n",
+        "    Returns\n",
+        "      dj_dw (ndarray Shape (n,)): The gradient of the cost w.r.t. the parameters w.\n",
+        "      dj_db (scalar):             The gradient of the cost w.r.t. the parameter b.\n",
+        "    \"\"\"\n",
+        "    m,n = X.shape           #(number of examples, number of features)\n",
+        "    dj_dw = np.zeros((n,))\n",
+        "    dj_db = 0.\n",
+        "\n",
+        "    for i in range(m):\n",
+        "        err = (np.dot(X[i], w) + b) - y[i]\n",
+        "        for j in range(n):\n",
+        "            dj_dw[j] = dj_dw[j] + err * X[i,j]\n",
+        "        dj_db = dj_db + err\n",
+        "    dj_dw = dj_dw/m\n",
+        "    dj_db = dj_db/m\n",
+        "\n",
+        "    return dj_db,dj_dw\n",
+        "\n",
+        "\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "\"\"\"\n",
+        "lab_utils_common.py\n",
+        "    functions common to all optional labs, Course 1, Week 2\n",
+        "\"\"\"\n",
+        "\n",
+        "import numpy as np\n",
+        "import matplotlib.pyplot as plt\n",
+        "\n",
+        "\n",
+        "\n",
+        "##########################################################\n",
+        "# Regression Routines\n",
+        "##########################################################\n",
+        "\n",
+        "#Function to calculate the cost\n",
+        "def compute_cost_matrix(X, y, w, b, verbose=False):\n",
+        "    \"\"\"\n",
+        "    Computes the gradient for linear regression\n",
+        "     Args:\n",
+        "      X (ndarray (m,n)): Data, m examples with n features\n",
+        "      y (ndarray (m,)) : target values\n",
+        "      w (ndarray (n,)) : model parameters\n",
+        "      b (scalar)       : model parameter\n",
+        "      verbose : (Boolean) If true, print out intermediate value f_wb\n",
+        "    Returns\n",
+        "      cost: (scalar)\n",
+        "    \"\"\"\n",
+        "    m = X.shape[0]\n",
+        "\n",
+        "    # calculate f_wb for all examples.\n",
+        "    f_wb = X @ w + b\n",
+        "    # calculate cost\n",
+        "    total_cost = (1/(2*m)) * np.sum((f_wb-y)**2)\n",
+        "\n",
+        "    if verbose: print(\"f_wb:\")\n",
+        "    if verbose: print(f_wb)\n",
+        "\n",
+        "    return total_cost\n",
+        "\n",
+        "def compute_gradient_matrix(X, y, w, b):\n",
+        "    \"\"\"\n",
+        "    Computes the gradient for linear regression\n",
+        "\n",
+        "    Args:\n",
+        "      X (ndarray (m,n)): Data, m examples with n features\n",
+        "      y (ndarray (m,)) : target values\n",
+        "      w (ndarray (n,)) : model parameters\n",
+        "      b (scalar)       : model parameter\n",
+        "    Returns\n",
+        "      dj_dw (ndarray (n,1)): The gradient of the cost w.r.t. the parameters w.\n",
+        "      dj_db (scalar):        The gradient of the cost w.r.t. the parameter b.\n",
+        "\n",
+        "    \"\"\"\n",
+        "    m,n = X.shape\n",
+        "    f_wb = X @ w + b\n",
+        "    e   = f_wb - y\n",
+        "    dj_dw  = (1/m) * (X.T @ e)\n",
+        "    dj_db  = (1/m) * np.sum(e)\n",
+        "\n",
+        "    return dj_db,dj_dw\n",
+        "\n",
+        "\n",
+        "# Loop version of multi-variable compute_cost\n",
+        "def compute_cost(X, y, w, b):\n",
+        "    \"\"\"\n",
+        "    compute cost\n",
+        "    Args:\n",
+        "      X (ndarray (m,n)): Data, m examples with n features\n",
+        "      y (ndarray (m,)) : target values\n",
+        "      w (ndarray (n,)) : model parameters\n",
+        "      b (scalar)       : model parameter\n",
+        "    Returns\n",
+        "      cost (scalar)    : cost\n",
+        "    \"\"\"\n",
+        "    m = X.shape[0]\n",
+        "    cost = 0.0\n",
+        "    for i in range(m):\n",
+        "        f_wb_i = np.dot(X[i],w) + b           #(n,)(n,)=scalar\n",
+        "        cost = cost + (f_wb_i - y[i])**2\n",
+        "    cost = cost/(2*m)\n",
+        "    return cost\n",
+        "\n",
+        "def compute_gradient(X, y, w, b):\n",
+        "    \"\"\"\n",
+        "    Computes the gradient for linear regression\n",
+        "    Args:\n",
+        "      X (ndarray (m,n)): Data, m examples with n features\n",
+        "      y (ndarray (m,)) : target values\n",
+        "      w (ndarray (n,)) : model parameters\n",
+        "      b (scalar)       : model parameter\n",
+        "    Returns\n",
+        "      dj_dw (ndarray Shape (n,)): The gradient of the cost w.r.t. the parameters w.\n",
+        "      dj_db (scalar):             The gradient of the cost w.r.t. the parameter b.\n",
+        "    \"\"\"\n",
+        "    m,n = X.shape           #(number of examples, number of features)\n",
+        "    dj_dw = np.zeros((n,))\n",
+        "    dj_db = 0.\n",
+        "\n",
+        "    for i in range(m):\n",
+        "        err = (np.dot(X[i], w) + b) - y[i]\n",
+        "        for j in range(n):\n",
+        "            dj_dw[j] = dj_dw[j] + err * X[i,j]\n",
+        "        dj_db = dj_db + err\n",
+        "    dj_dw = dj_dw/m\n",
+        "    dj_db = dj_db/m\n",
+        "\n",
+        "    return dj_db,dj_dw\n",
+        "\n"
+      ],
+      "metadata": {
+        "id": "6HzVk19PUJz7"
+      },
+      "execution_count": 37,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "Problem statement\n",
+        "\n"
+      ],
+      "metadata": {
+        "id": "EFMyIT9VKr91"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "x_train = np.array = ([1.0, 2.0])\n",
+        "y_train = np.array = ([300.0, 500.0])\n"
+      ],
+      "metadata": {
+        "id": "pRhtjW6fKveP"
+      },
+      "execution_count": 4,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "Compute Cost\n",
+        "\n",
+        "\n"
+      ],
+      "metadata": {
+        "id": "SqUZxlpnK9X4"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "def compute_cost(x, y, w, b):\n",
+        "  m = x.shape[0]\n",
+        "  cost = 0\n",
+        "\n",
+        "  for i in range(m):\n",
+        "    f_wb = w * x[i] + b\n",
+        "    cost = cost + (f_wb - y[i])**2\n",
+        "  total_cost = 1 / (2 * m) * cost\n",
+        "\n",
+        "  return total_cost\n",
+        "\n"
+      ],
+      "metadata": {
+        "id": "bMIpmK0YK8Ca"
+      },
+      "execution_count": 2,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "# Gradient descent summary\n"
+      ],
+      "metadata": {
+        "id": "yfTfH80hMIFI"
+      }
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "So far in this course, you have developed a linear model that predicts\n",
+        ":\n",
+        "\n",
+        "In linear regression, you utilize input training data to fit the parameters\n",
+        ",\n",
+        " by minimizing a measure of the error between our predictions\n",
+        " and the actual data\n",
+        ". The measure is called the\n",
+        ",\n",
+        ". In training you measure the cost over all of our training samples\n",
+        "\n",
+        "\n",
+        "\n",
+        "In lecture, gradient descent was described as:\n",
+        "\n",
+        "\n",
+        "\n",
+        "\n",
+        "where, parameters\n",
+        ",\n",
+        " are updated simultaneously.\n",
+        "The gradient is defined as:\n",
+        "\n",
+        "\n",
+        "\n",
+        "\n",
+        "\n",
+        "\n",
+        "Here simultaniously means that you calculate the partial derivatives for all the parameters before updating any of the parameters.\n"
+      ],
+      "metadata": {
+        "id": "7a9j_d1gMFHt"
+      }
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "# Implement gardient descent"
+      ],
+      "metadata": {
+        "id": "7nMCQCijMVNV"
+      }
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "You will implement gradient descent algorithm for one feature. You will need three functions.\n",
+        "\n",
+        "compute_gradient implementing equation (4) and (5) above\n",
+        "compute_cost implementing equation (2) above (code from previous lab)\n",
+        "gradient_descent, utilizing compute_gradient and compute_cost\n",
+        "Conventions:\n",
+        "\n",
+        "The naming of python variables containing partial derivatives follows this pattern,\n",
+        "\n",
+        " will be dj_db.\n",
+        "w.r.t is With Respect To, as in partial derivative of\n",
+        " With Respect To\n",
+        "."
+      ],
+      "metadata": {
+        "id": "k9YayU0LMZ0x"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "def compute_cost(x, y, w, b):\n",
+        "  m = x.shape[0]\n",
+        "  dj_dw = 0\n",
+        "  dj_db = 0\n",
+        "\n",
+        "  for i in range (m):\n",
+        "    f_wb = w * x[i] + b\n",
+        "    dj_dw_i = (f_wb - y[i]) * x[i]\n",
+        "    dj_db_i = f_wb - y[i]\n",
+        "    dj_db += dj_db_i\n",
+        "    dj_dw += dj_dw_i\n",
+        "  dj_dw = dj_dw / m\n",
+        "  dj_db = dj_db / m\n",
+        "\n",
+        "  return dj_dw, dj_db\n",
+        "\n"
+      ],
+      "metadata": {
+        "id": "GJPWzvgBMBXY"
+      },
+      "execution_count": 20,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "def compute_gradient(x, y, w, b):\n",
+        "    m, n = x.shape\n",
+        "    dj_dw = np.zeros((n,))\n",
+        "    dj_db = 0.\n",
+        "\n",
+        "    for i in range(m):\n",
+        "        err = (np.dot(x[i], w) + b) - y[i]\n",
+        "        for j in range(n):\n",
+        "            dj_dw[j] += err * x[i, j]\n",
+        "        dj_db += err\n",
+        "\n",
+        "    dj_dw = dj_dw / m\n",
+        "    dj_db = dj_db / m\n",
+        "\n",
+        "    return dj_dw, dj_db\n",
+        "\n",
+        "\n",
+        "\n",
+        "\n",
+        "\n"
+      ],
+      "metadata": {
+        "id": "e07LlN-vMEM2"
+      },
+      "execution_count": 19,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "import math\n",
+        "\n",
+        "def gradient_descent(x, y, w, b, alpha, num_iters, compute_cost, compute_gradient):\n",
+        "    j_history = []\n",
+        "    p_history = []\n",
+        "\n",
+        "    for i in range(num_iters):\n",
+        "        print(f\"Iteração {i}\")  # Debug: verifica se o loop executa\n",
+        "\n",
+        "        dj_dw, dj_db = compute_gradient(x, y, w, b)\n",
+        "\n",
+        "        b = b - alpha * dj_db\n",
+        "        w = w - alpha * dj_dw\n",
+        "\n",
+        "        if i < 100000:\n",
+        "            j_history.append(compute_cost(x, y, w, b))\n",
+        "            p_history.append([w, b])\n",
+        "\n",
+        "        if i % max(1, math.ceil(num_iters / 10)) == 0:\n",
+        "            print(f\"Iteration {i:4}: Cost {j_history[-1]:0.2e} \",\n",
+        "                  f\"dj_dw: {dj_dw}, dj_db: {dj_db} \",\n",
+        "                  f\"w: {w}, b: {b}\")\n",
+        "\n",
+        "    return w, b, j_history, p_history\n"
+      ],
+      "metadata": {
+        "id": "qtKbchL3QRlo"
+      },
+      "execution_count": 27,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "import numpy as np\n",
+        "import math\n",
+        "import copy\n",
+        "\n",
+        "\n",
+        "x_train = np.array([[1.0, 2.0],\n",
+        "                    [2.0, 3.0],\n",
+        "                    [3.0, 4.0],\n",
+        "                    [4.0, 5.0]])\n",
+        "y_train = np.array([3.0, 5.0, 7.0, 9.0])\n",
+        "\n",
+        "\n",
+        "def compute_cost(X, y, w, b):\n",
+        "    m = X.shape[0]\n",
+        "    cost = 0.0\n",
+        "    for i in range(m):\n",
+        "        f_wb = np.dot(X[i], w) + b\n",
+        "        cost += (f_wb - y[i])**2\n",
+        "    total_cost = cost / (2 * m)\n",
+        "    return total_cost\n",
+        "\n",
+        "\n",
+        "def compute_gradient(X, y, w, b):\n",
+        "    m, n = X.shape\n",
+        "    dj_dw = np.zeros(n)\n",
+        "    dj_db = 0.\n",
+        "    for i in range(m):\n",
+        "        err = (np.dot(X[i], w) + b) - y[i]\n",
+        "        for j in range(n):\n",
+        "            dj_dw[j] += err * X[i, j]\n",
+        "        dj_db += err\n",
+        "    dj_dw /= m\n",
+        "    dj_db /= m\n",
+        "    return dj_dw, dj_db\n",
+        "\n",
+        "\n",
+        "def gradient_descent(x, y, w_in, b_in, alpha, num_iters, compute_cost, compute_gradient):\n",
+        "    w = copy.deepcopy(w_in)\n",
+        "    b = b_in\n",
+        "    j_history = []\n",
+        "    p_history = []\n",
+        "\n",
+        "    for i in range(num_iters):\n",
+        "        dj_dw, dj_db = compute_gradient(x, y, w, b)\n",
+        "\n",
+        "        b = b - alpha * dj_db\n",
+        "        w = w - alpha * dj_dw\n",
+        "\n",
+        "        if i < 100000:\n",
+        "            j_history.append(compute_cost(x, y, w, b))\n",
+        "            p_history.append([w.copy(), b])\n",
+        "\n",
+        "        if i % max(1, math.ceil(num_iters / 10)) == 0:\n",
+        "            print(f\"Iteration {i:4}: Cost {j_history[-1]:0.2e} \",\n",
+        "                  f\"dj_dw: {dj_dw}, dj_db: {dj_db} \",\n",
+        "                  f\"w: {w}, b: {b}\")\n",
+        "\n",
+        "    return w, b, j_history, p_history\n",
+        "\n",
+        "\n",
+        "w_init = np.zeros(x_train.shape[1])\n",
+        "b_init = 0\n",
+        "\n",
+        "iterations = 10000\n",
+        "tmp_alpha = 1.0e-2\n",
+        "\n",
+        "\n",
+        "w_final, b_final, J_hist, p_hist = gradient_descent(\n",
+        "    x_train, y_train, w_init, b_init, tmp_alpha,\n",
+        "    iterations, compute_cost, compute_gradient\n",
+        ")\n",
+        "\n",
+        "\n",
+        "print(f\"(w,b) found by gradient descent: ({w_final},{b_final:8.4f})\")\n"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 222
+        },
+        "id": "stfTvI3zSXTW",
+        "outputId": "d6a6d7fa-1e6e-49e2-d995-1b3843c34d43"
+      },
+      "execution_count": 39,
+      "outputs": [
+        {
+          "output_type": "error",
+          "ename": "TypeError",
+          "evalue": "'list' object is not callable",
+          "traceback": [
+            "\u001b[0;31m---------------------------------------------------------------------------\u001b[0m",
+            "\u001b[0;31mTypeError\u001b[0m                                 Traceback (most recent call last)",
+            "\u001b[0;32m<ipython-input-39-d73f12c357f7>\u001b[0m in \u001b[0;36m<cell line: 0>\u001b[0;34m()\u001b[0m\n\u001b[1;32m      4\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m      5\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m----> 6\u001b[0;31m x_train = np.array([[1.0, 2.0],\n\u001b[0m\u001b[1;32m      7\u001b[0m                     \u001b[0;34m[\u001b[0m\u001b[0;36m2.0\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0;36m3.0\u001b[0m\u001b[0;34m]\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m      8\u001b[0m                     \u001b[0;34m[\u001b[0m\u001b[0;36m3.0\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0;36m4.0\u001b[0m\u001b[0;34m]\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;31mTypeError\u001b[0m: 'list' object is not callable"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "Cost versus iterations of gradient descent\n"
+      ],
+      "metadata": {
+        "id": "bF-nt2jbSSwf"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# plot cost versus iteration\n",
+        "fig, (ax1, ax2) = plt.subplots(1, 2, constrained_layout=True, figsize=(12,4))\n",
+        "ax1.plot(J_hist[:100])\n",
+        "ax2.plot(1000 + np.arange(len(J_hist[1000:])), J_hist[1000:])\n",
+        "ax1.set_title(\"Cost vs. iteration(start)\");  ax2.set_title(\"Cost vs. iteration (end)\")\n",
+        "ax1.set_ylabel('Cost')            ;  ax2.set_ylabel('Cost')\n",
+        "ax1.set_xlabel('iteration step')  ;  ax2.set_xlabel('iteration step')\n",
+        "plt.show()"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 393
+        },
+        "id": "uckxQCuLSow2",
+        "outputId": "853abb51-8eb1-449f-df4b-b7b3ffd6d7d3"
+      },
+      "execution_count": 40,
+      "outputs": [
+        {
+          "output_type": "error",
+          "ename": "TypeError",
+          "evalue": "'list' object is not callable",
+          "traceback": [
+            "\u001b[0;31m---------------------------------------------------------------------------\u001b[0m",
+            "\u001b[0;31mTypeError\u001b[0m                                 Traceback (most recent call last)",
+            "\u001b[0;32m<ipython-input-40-50029eb0c48e>\u001b[0m in \u001b[0;36m<cell line: 0>\u001b[0;34m()\u001b[0m\n\u001b[1;32m      1\u001b[0m \u001b[0;31m# plot cost versus iteration\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m----> 2\u001b[0;31m \u001b[0mfig\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0;34m(\u001b[0m\u001b[0max1\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0max2\u001b[0m\u001b[0;34m)\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mplt\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0msubplots\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;36m1\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0;36m2\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mconstrained_layout\u001b[0m\u001b[0;34m=\u001b[0m\u001b[0;32mTrue\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mfigsize\u001b[0m\u001b[0;34m=\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;36m12\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0;36m4\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m      3\u001b[0m \u001b[0max1\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mplot\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mJ_hist\u001b[0m\u001b[0;34m[\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;36m100\u001b[0m\u001b[0;34m]\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m      4\u001b[0m \u001b[0max2\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mplot\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;36m1000\u001b[0m \u001b[0;34m+\u001b[0m \u001b[0mnp\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0marange\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mlen\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mJ_hist\u001b[0m\u001b[0;34m[\u001b[0m\u001b[0;36m1000\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m]\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mJ_hist\u001b[0m\u001b[0;34m[\u001b[0m\u001b[0;36m1000\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m]\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m      5\u001b[0m \u001b[0max1\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mset_title\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m\"Cost vs. iteration(start)\"\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m;\u001b[0m  \u001b[0max2\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mset_title\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m\"Cost vs. iteration (end)\"\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;32m/usr/local/lib/python3.11/dist-packages/matplotlib/pyplot.py\u001b[0m in \u001b[0;36msubplots\u001b[0;34m(nrows, ncols, sharex, sharey, squeeze, width_ratios, height_ratios, subplot_kw, gridspec_kw, **fig_kw)\u001b[0m\n\u001b[1;32m   1773\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1774\u001b[0m     \"\"\"\n\u001b[0;32m-> 1775\u001b[0;31m     \u001b[0mfig\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mfigure\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m**\u001b[0m\u001b[0mfig_kw\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m   1776\u001b[0m     axs = fig.subplots(nrows=nrows, ncols=ncols, sharex=sharex, sharey=sharey,\n\u001b[1;32m   1777\u001b[0m                        \u001b[0msqueeze\u001b[0m\u001b[0;34m=\u001b[0m\u001b[0msqueeze\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0msubplot_kw\u001b[0m\u001b[0;34m=\u001b[0m\u001b[0msubplot_kw\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;32m/usr/local/lib/python3.11/dist-packages/matplotlib/pyplot.py\u001b[0m in \u001b[0;36mfigure\u001b[0;34m(num, figsize, dpi, facecolor, edgecolor, frameon, FigureClass, clear, **kwargs)\u001b[0m\n\u001b[1;32m   1040\u001b[0m                 RuntimeWarning)\n\u001b[1;32m   1041\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m-> 1042\u001b[0;31m         manager = new_figure_manager(\n\u001b[0m\u001b[1;32m   1043\u001b[0m             \u001b[0mnum\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mfigsize\u001b[0m\u001b[0;34m=\u001b[0m\u001b[0mfigsize\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mdpi\u001b[0m\u001b[0;34m=\u001b[0m\u001b[0mdpi\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1044\u001b[0m             \u001b[0mfacecolor\u001b[0m\u001b[0;34m=\u001b[0m\u001b[0mfacecolor\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0medgecolor\u001b[0m\u001b[0;34m=\u001b[0m\u001b[0medgecolor\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mframeon\u001b[0m\u001b[0;34m=\u001b[0m\u001b[0mframeon\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;32m/usr/local/lib/python3.11/dist-packages/matplotlib/pyplot.py\u001b[0m in \u001b[0;36mnew_figure_manager\u001b[0;34m(*args, **kwargs)\u001b[0m\n\u001b[1;32m    550\u001b[0m     \u001b[0;34m\"\"\"Create a new figure manager instance.\"\"\"\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m    551\u001b[0m     \u001b[0m_warn_if_gui_out_of_main_thread\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m--> 552\u001b[0;31m     \u001b[0;32mreturn\u001b[0m \u001b[0m_get_backend_mod\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mnew_figure_manager\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m*\u001b[0m\u001b[0margs\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0;34m**\u001b[0m\u001b[0mkwargs\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m    553\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m    554\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;32m/usr/local/lib/python3.11/dist-packages/matplotlib_inline/backend_inline.py\u001b[0m in \u001b[0;36mnew_figure_manager\u001b[0;34m(num, FigureClass, *args, **kwargs)\u001b[0m\n\u001b[1;32m     25\u001b[0m     \u001b[0mThis\u001b[0m \u001b[0mfunction\u001b[0m \u001b[0;32mis\u001b[0m \u001b[0mpart\u001b[0m \u001b[0mof\u001b[0m \u001b[0mthe\u001b[0m \u001b[0mAPI\u001b[0m \u001b[0mexpected\u001b[0m \u001b[0mby\u001b[0m \u001b[0mMatplotlib\u001b[0m \u001b[0mbackends\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m     26\u001b[0m     \"\"\"\n\u001b[0;32m---> 27\u001b[0;31m     \u001b[0;32mreturn\u001b[0m \u001b[0mnew_figure_manager_given_figure\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mnum\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mFigureClass\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m*\u001b[0m\u001b[0margs\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0;34m**\u001b[0m\u001b[0mkwargs\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m     28\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m     29\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;32m/usr/local/lib/python3.11/dist-packages/matplotlib/figure.py\u001b[0m in \u001b[0;36m__init__\u001b[0;34m(self, figsize, dpi, facecolor, edgecolor, linewidth, frameon, subplotpars, tight_layout, constrained_layout, layout, **kwargs)\u001b[0m\n\u001b[1;32m   2621\u001b[0m             \u001b[0mframeon\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mmpl\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mrcParams\u001b[0m\u001b[0;34m[\u001b[0m\u001b[0;34m'figure.frameon'\u001b[0m\u001b[0;34m]\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   2622\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m-> 2623\u001b[0;31m         \u001b[0;32mif\u001b[0m \u001b[0;32mnot\u001b[0m \u001b[0mnp\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0misfinite\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mfigsize\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mall\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m)\u001b[0m \u001b[0;32mor\u001b[0m \u001b[0;34m(\u001b[0m\u001b[0mnp\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0marray\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mfigsize\u001b[0m\u001b[0;34m)\u001b[0m \u001b[0;34m<\u001b[0m \u001b[0;36m0\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0many\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m   2624\u001b[0m             raise ValueError('figure size must be positive finite not '\n\u001b[1;32m   2625\u001b[0m                              f'{figsize}')\n",
+            "\u001b[0;31mTypeError\u001b[0m: 'list' object is not callable"
+          ]
+        }
+      ]
+    }
+  ]
+}
